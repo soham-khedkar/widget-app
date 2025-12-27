@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Grainy paper texture effect */
+@layer base {
+  html {
+    /* Subtle grainy texture - can be enhanced with actual texture image */
+    background-image: 
+      repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.01) 0px,
+        transparent 1px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.01) 3px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.01) 0px,
+        transparent 1px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.01) 3px
+      );
+  }
+}

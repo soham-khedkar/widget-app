@@ -1,98 +1,263 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useState } from 'react'
+import { StyleSheet, View, Text, ScrollView, Platform, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { useAuthContext } from '@/hooks/use-auth-context'
+import { useColorScheme } from '@/hooks/use-color-scheme'
+import { Colors } from '@/constants/theme'
+import { GrainyBackground } from '@/components/grainy-background'
+import { ProfileModal } from '@/components/profile-modal'
+import { Ionicons } from '@expo/vector-icons'
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { profile, signOut } = useAuthContext()
+  const colorScheme = useColorScheme()
+  const colors = Colors[colorScheme ?? 'light']
+  const router = useRouter()
+  const [profileModalVisible, setProfileModalVisible] = useState(false)
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+  // Mock data for now - will be replaced with real data
+  const connectionScore = profile?.partner_id ? 85 : 0
+  const todosCount = 0
+  const messagesCount = 0
+  const photosCount = 0
+
+  // Stats dashboard cells with doodle-style irregular shapes
+  const stats = [
+    {
+      id: 'score',
+      label: 'Connection',
+      value: connectionScore,
+      unit: '/100',
+      icon: 'heart',
+      color: colors.primary,
+      size: 'large', // Takes full width
+    },
+    {
+      id: 'profile',
+      label: 'Profile',
+      value: profile?.name ? 'Edit' : 'Setup',
+      icon: 'person',
+      color: colors.primary,
+      size: 'medium', // Takes half width
+    },
+    {
+      id: 'todos',
+      label: 'Todos',
+      value: todosCount,
+      icon: 'checkmark-circle',
+      color: colors.primary,
+      size: 'small', // Takes half width
+    },
+    {
+      id: 'messages',
+      label: 'Messages',
+      value: messagesCount,
+      icon: 'chatbubble',
+      color: colors.primary,
+      size: 'small', // Takes half width
+    },
+  ]
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <GrainyBackground>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logout Button */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={[styles.logoutButton, { borderColor: colors.border, borderWidth: 2 }]}
+              onPress={async () => {
+                await signOut()
+                router.replace('/login')
+              }}
+            >
+              <Ionicons name="log-out-outline" size={20} color={colors.primary} />
+              <Text style={[styles.logoutText, { color: colors.primary }]}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Stats Dashboard Grid */}
+          <View style={styles.statsGrid}>
+            {stats.map((stat, index) => {
+              const isLarge = stat.size === 'large'
+              const isMedium = stat.size === 'medium'
+              const isSmall = stat.size === 'small'
+
+              return (
+                <View
+                  key={stat.id}
+                  style={[
+                    styles.statCard,
+                    isLarge && styles.statCardLarge,
+                    isMedium && styles.statCardMedium,
+                    isSmall && styles.statCardSmall,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      borderWidth: 2,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.statCardTouchable}
+                    onPress={() => {
+                      if (stat.id === 'profile') {
+                        setProfileModalVisible(true)
+                      } else if (stat.id === 'todos') {
+                        router.push('/(tabs)/todos')
+                      } else if (stat.id === 'messages') {
+                        router.push('/(tabs)/messages')
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.statIconContainer, { borderColor: colors.border, borderWidth: 2 }]}>
+                      <Ionicons name={stat.icon as any} size={isLarge ? 32 : 24} color={colors.primary} />
+                    </View>
+                    {isLarge ? (
+                      <>
+                        <Text style={[styles.statValueLarge, { color: colors.primary }]}>
+                          {stat.value}
+                        </Text>
+                        <Text style={[styles.statUnitLarge, { color: colors.textSecondary }]}>
+                          {stat.unit}
+                        </Text>
+                        <Text style={[styles.statLabelLarge, { color: colors.textSecondary }]}>
+                          {stat.label}
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={[styles.statValue, { color: colors.primary }]}>
+                          {typeof stat.value === 'number' ? stat.value : stat.value}
+                        </Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                          {stat.label}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )
+            })}
+          </View>
+        </ScrollView>
+
+        {/* Profile Modal */}
+        <ProfileModal
+          visible={profileModalVisible}
+          onClose={() => setProfileModalVisible(false)}
+        />
+      </GrainyBackground>
+    </SafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingTop: 12,
+    minHeight: '100%',
+  },
+  header: {
+    marginBottom: 16,
+    alignItems: 'flex-end',
+  },
+  logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: 'transparent',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-});
+  statCard: {
+    borderRadius: 24,
+    ...(Platform.OS === 'ios' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+    }),
+    ...(Platform.OS === 'android' && {
+      elevation: 4,
+    }),
+  },
+  statCardLarge: {
+    width: '100%',
+    minHeight: 200,
+    padding: 28,
+    marginBottom: 16,
+  },
+  statCardMedium: {
+    width: '47%',
+    minHeight: 200,
+    padding: 24,
+    marginBottom: 16,
+  },
+  statCardSmall: {
+    width: '47%',
+    minHeight: 140,
+    padding: 20,
+    marginBottom: 16,
+  },
+  statCardTouchable: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  statValueLarge: {
+    fontSize: 56,
+    fontWeight: '700',
+    lineHeight: 64,
+  },
+  statUnitLarge: {
+    fontSize: 20,
+    fontWeight: '500',
+    marginTop: -8,
+  },
+  statLabelLarge: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+})
