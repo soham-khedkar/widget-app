@@ -1,5 +1,5 @@
 import { AuthContext } from '@/hooks/use-auth-context'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import * as WebBrowser from 'expo-web-browser'
 import { PropsWithChildren, useEffect, useState } from 'react'
@@ -37,17 +37,29 @@ export default function AuthProvider({ children }: PropsWithChildren) {
           .single()
         
         if (createError) {
-          console.error('Error creating profile:', createError)
+          // Only log non-network errors
+          if (!createError.message?.includes('Network request failed') && !createError.message?.includes('fetch')) {
+            console.error('Error creating profile:', createError)
+          }
           setProfile(null)
         } else {
           setProfile(newProfile)
         }
       } else if (error) {
-        console.error('Error fetching profile:', error)
+        // Only log non-network errors
+        if (!error.message?.includes('Network request failed') && !error.message?.includes('fetch')) {
+          console.error('Error fetching profile:', error)
+        }
         setProfile(null)
       } else {
         setProfile(data)
       }
+    } catch (err: any) {
+      // Handle network errors gracefully
+      if (!err?.message?.includes('Network request failed') && !err?.message?.includes('fetch')) {
+        console.error('Unexpected error fetching profile:', err)
+      }
+      setProfile(null)
     } finally {
       setIsProfileLoading(false)
     }
@@ -59,29 +71,65 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       setIsLoading(true)
       setIsProfileLoading(true)
 
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession()
-
-      if (error) {
-        console.error('Error fetching session:', error)
-      }
-
-      setSession(session)
-      
-      // Fetch profile if session exists
-      if (session?.user?.id) {
-        await fetchProfile(session.user.id)
-      } else {
-        setProfile(null)
+      // If Supabase is not configured, skip initialization
+      if (!isSupabaseConfigured) {
+        setIsLoading(false)
         setIsProfileLoading(false)
+        setSession(null)
+        setProfile(null)
+        return
       }
-      
-      setIsLoading(false)
+
+      try {
+        // Set session immediately to unblock UI, then fetch profile in background
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
+        if (error) {
+          // Only log non-network errors to avoid spam
+          if (!error.message?.includes('Network request failed') && !error.message?.includes('fetch')) {
+            console.error('Error fetching session:', error)
+          }
+        }
+
+        setSession(session)
+        
+        // Mark loading as false immediately to unblock UI
+        setIsLoading(false)
+        
+        // Fetch profile in background (non-blocking)
+        if (session?.user?.id) {
+          // Don't await - let it happen in background
+          fetchProfile(session.user.id).catch((err) => {
+            // Only log non-network errors
+            if (!err?.message?.includes('Network request failed') && !err?.message?.includes('fetch')) {
+              console.error('Error fetching profile:', err)
+            }
+          })
+        } else {
+          setProfile(null)
+          setIsProfileLoading(false)
+        }
+      } catch (error: any) {
+        // Handle any unexpected errors
+        if (!error?.message?.includes('Network request failed') && !error?.message?.includes('fetch')) {
+          console.error('Unexpected error initializing auth:', error)
+        }
+        setIsLoading(false)
+        setIsProfileLoading(false)
+        setSession(null)
+        setProfile(null)
+      }
     }
 
     initializeAuth()
+
+    // Only subscribe to auth changes if Supabase is configured
+    if (!isSupabaseConfigured) {
+      return
+    }
 
     const {
       data: { subscription },
@@ -90,7 +138,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       
       // Fetch profile when session changes
       if (session?.user?.id) {
-        await fetchProfile(session.user.id)
+        try {
+          await fetchProfile(session.user.id)
+        } catch (err: any) {
+          // Only log non-network errors
+          if (!err?.message?.includes('Network request failed') && !err?.message?.includes('fetch')) {
+            console.error('Error fetching profile on auth change:', err)
+          }
+        }
       } else {
         setProfile(null)
         setIsProfileLoading(false)
@@ -176,7 +231,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       console.error('Error signing out:', error)
     }
     setSession(null)
-    setProfile(null)
+        setProfile(null)
     return { error }
   }
 

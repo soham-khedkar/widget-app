@@ -43,14 +43,26 @@ export function useTodos() {
 
     try {
       setLoading(true)
-      const { data, error: fetchError } = await supabase
+      const { data: groupsData, error: fetchError } = await supabase
         .from('todo_groups')
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
-      setGroups(data || [])
+      setGroups(groupsData || [])
+      
+      // Also fetch all todos to get accurate counts
+      const { data: todosData, error: todosError } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+
+      if (!todosError && todosData) {
+        setTodos(todosData)
+      }
+      
       setError(null)
     } catch (err: any) {
       console.error('Error fetching todo groups:', err)

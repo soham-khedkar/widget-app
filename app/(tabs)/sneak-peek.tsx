@@ -1,22 +1,22 @@
-import { useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { GrainyBackground } from '@/components/grainy-background'
-import { useColorScheme } from '@/hooks/use-color-scheme'
-import { Colors } from '@/constants/theme'
-import { useSneakPeek, SneakPeekWithUrl } from '@/hooks/use-sneak-peek'
-import { PhotoGrid } from '@/components/sneak-peek/PhotoGrid'
 import { CameraModal } from '@/components/sneak-peek/CameraModal'
 import { PhotoDetailModal } from '@/components/sneak-peek/PhotoDetailModal'
-import { Ionicons } from '@expo/vector-icons'
+import { PhotoGrid } from '@/components/sneak-peek/PhotoGrid'
+import { Colors } from '@/constants/theme'
 import { useAuthContext } from '@/hooks/use-auth-context'
+import { useColorScheme } from '@/hooks/use-color-scheme'
+import { SneakPeekWithUrl, useSneakPeek } from '@/hooks/use-sneak-peek'
+import { Ionicons } from '@expo/vector-icons'
+import { useEffect, useState } from 'react'
+import { useRouter, useLocalSearchParams } from 'expo-router'
+import {
+    ActivityIndicator,
+    Alert,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function SneakPeekScreen() {
   const colorScheme = useColorScheme()
@@ -40,6 +40,18 @@ export default function SneakPeekScreen() {
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [selectedPeek, setSelectedPeek] = useState<SneakPeekWithUrl | null>(null)
   const unviewedCount = getUnviewedCount()
+  const router = useRouter()
+  const params = useLocalSearchParams()
+
+  // Handle deep link to open specific photo
+  useEffect(() => {
+    if (params.id && sneakPeeks.length > 0) {
+      const photo = sneakPeeks.find((p) => p.id === params.id)
+      if (photo) {
+        setSelectedPeek(photo)
+      }
+    }
+  }, [params.id, sneakPeeks])
 
   const handleImageSelected = async (uri: string, caption?: string) => {
     const result = await createSneakPeek(uri, caption)
@@ -69,22 +81,19 @@ export default function SneakPeekScreen() {
   if (loading && sneakPeeks.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <GrainyBackground>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              Loading sneak peeks...
-            </Text>
-          </View>
-        </GrainyBackground>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading sneak peeks...
+          </Text>
+        </View>
       </SafeAreaView>
     )
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <GrainyBackground>
-        <View style={styles.container}>
+      <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <View>
@@ -166,7 +175,6 @@ export default function SneakPeekScreen() {
           onClose={() => setSelectedPeek(null)}
           onDelete={selectedPeek ? () => handleDelete(selectedPeek.id) : undefined}
         />
-      </GrainyBackground>
     </SafeAreaView>
   )
 }

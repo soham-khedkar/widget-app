@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-  Platform,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { Colors } from '@/constants/theme'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { useColorScheme } from '@/hooks/use-color-scheme'
-import { Colors } from '@/constants/theme'
-import { GrainyBackground } from '@/components/grainy-background'
 import { supabase } from '@/lib/supabase'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function PartnerSetupScreen() {
   const { profile, isLoading, refreshProfile } = useAuthContext()
@@ -114,20 +113,17 @@ export default function PartnerSetupScreen() {
   if (checking) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <GrainyBackground>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
-          </View>
-        </GrainyBackground>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
+        </View>
       </SafeAreaView>
     )
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <GrainyBackground>
-        <ScrollView
+      <ScrollView
           style={styles.container}
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
@@ -202,7 +198,6 @@ export default function PartnerSetupScreen() {
             </View>
           </View>
         </ScrollView>
-      </GrainyBackground>
     </SafeAreaView>
   )
 }

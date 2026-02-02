@@ -1,4 +1,3 @@
-import { GrainyBackground } from '@/components/grainy-background'
 import { Colors } from '@/constants/theme'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { useColorScheme } from '@/hooks/use-color-scheme'
@@ -173,8 +172,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <GrainyBackground>
-        <KeyboardAvoidingView
+      <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
@@ -380,7 +378,6 @@ export default function LoginScreen() {
         </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </GrainyBackground>
     </SafeAreaView>
   )
 }

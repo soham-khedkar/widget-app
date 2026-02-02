@@ -1,50 +1,114 @@
-# Welcome to your Expo app 👋
+# TruLuv - Shared Notes & Goals App for Couples
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A real-time mobile app where two people (partners) can share notes, to-do lists, and personal goals — live synced between devices.
 
-## Get started
+## 🎯 Concept
 
-1. Install dependencies
+TruLuv is a lightweight emotional and organizational space for couples to:
+- Leave quick "thinking of you" notes
+- Share daily task lists or trip planning goals
+- Send little reminders or updates throughout the day
 
+## 🛠️ Tech Stack
+
+- **Frontend**: React Native with Expo (file-based routing)
+- **UI Library**: Gluestack UI + NativeWind (Tailwind CSS)
+- **Backend**: Supabase
+  - Authentication
+  - PostgreSQL Database
+  - Realtime subscriptions
+  - Storage (for future features)
+- **Language**: TypeScript
+
+## 📦 Setup Instructions
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
+- Expo Go app on your phone (for testing)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd truluv
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Set up environment variables**
+   
+   Create a `.env` file in the root directory:
    ```bash
-   npx expo start
+   cp .env.example .env
+   ```
+   
+   Then add your Supabase credentials:
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   ```
+   
+   Get these from your Supabase project: **Project Settings → API**
+
+4. **Start the development server**
+   ```bash
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+5. **Run on your device**
+   - Scan the QR code with Expo Go (Android) or Camera app (iOS)
+   - Or press `a` for Android emulator, `i` for iOS simulator
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📁 Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+truluv/
+├── app/                    # Expo Router screens (file-based routing)
+├── components/             # Reusable UI components
+│   └── ui/                # Gluestack UI components
+├── constants/              # App constants, colors, config
+├── contexts/               # React Context providers (Auth, etc.)
+├── hooks/                  # Custom React hooks
+├── lib/                    # Utility functions, Supabase client
+├── types/                  # TypeScript type definitions
+└── assets/                 # Images, fonts, etc.
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🎯 MVP Features (Current Focus)
 
-## Learn more
+- ✅ User Authentication (email/password + Google OAuth)
+- ✅ Partner linking system
+- ✅ Shared To-Dos (CRUD + real-time sync)
+- ✅ Sneak Peek photo sharing with real-time updates
+- 🔄 Shared Notes (CRUD + real-time sync)
+- ✅ Dashboard/Home screen
+- ✅ Settings/Profile
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🚀 Future Features
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Image uploads to notes
+- Spotify song dedication
+- Canvas/drawing feature
+- Push notifications
+- Offline support
+- User presence indicators
+- Multi-user groups (beyond couples)
 
-## Join the community
+## 📝 Development
 
-Join our community of developers creating universal apps.
+- Run linter: `npm run lint`
+- Type check: `npx tsc --noEmit`
+- Reset project: `npm run reset-project`
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🤝 Contributing
+
+This is a personal project, but suggestions and feedback are welcome!
+
+## 📄 License
+
+MIT

@@ -10,8 +10,9 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native'
-import { Motion } from '@legendapp/motion'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { useColorScheme } from '@/hooks/use-color-scheme'
@@ -80,8 +81,19 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
   const [age, setAge] = useState('')
   const [address, setAddress] = useState('')
+  const [relationshipStartDate, setRelationshipStartDate] = useState<Date | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    console.log('[ProfileModal] visible changed:', visible)
+  }, [visible])
+
+  const handleBackdropPress = () => {
+    console.log('[ProfileModal] backdrop pressed, closing modal')
+    onClose()
+  }
 
   // Load profile data when modal opens
   useEffect(() => {
@@ -91,12 +103,19 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
         setGender((profile.gender as 'male' | 'female' | 'other') || '')
         setAge(profile.age ? String(profile.age) : '')
         setAddress(profile.address || '')
+        // Load relationship start date if exists
+        if (profile.relationship_start_date) {
+          setRelationshipStartDate(new Date(profile.relationship_start_date))
+        } else {
+          setRelationshipStartDate(null)
+        }
       } else {
         // Reset if no profile
         setName('')
         setGender('')
         setAge('')
         setAddress('')
+        setRelationshipStartDate(null)
       }
       setErrors({})
     }
@@ -140,6 +159,11 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
       if (address.trim()) {
         updateData.address = address.trim()
       }
+      
+      // Add relationship start date if set
+      if (relationshipStartDate) {
+        updateData.relationship_start_date = relationshipStartDate.toISOString().split('T')[0]
+      }
 
       const { error } = await supabase
         .from('profiles')
@@ -177,28 +201,33 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
     )
   }
 
+  console.log('[ProfileModal] Rendering, visible:', visible)
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="none"
-      onRequestClose={onClose}
+      animationType="slide"
+      onRequestClose={() => {
+        console.log('[ProfileModal] onRequestClose called')
+        onClose()
+      }}
     >
-      <TouchableOpacity
+      <KeyboardAvoidingView
         style={styles.overlay}
-        activeOpacity={1}
-        onPress={onClose}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <Motion.View
-          initial={{ translateY: 600 }}
-          animate={{ translateY: 0 }}
-          exit={{ translateY: 600 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={handleBackdropPress}
+        />
+        <View
           style={[
             styles.modalContent,
             { backgroundColor: colors.surface },
           ]}
-          onStartShouldSetResponder={() => true}
         >
           {/* Handle bar */}
           <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
@@ -206,16 +235,23 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>Edit Profile</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('[ProfileModal] Close button pressed')
+                onClose()
+              }}
+              style={styles.closeButton}
+            >
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.scrollContainer}>
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
             {/* Profile Info Display */}
             {profile && (
               <>
@@ -365,6 +401,47 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
               )}
             </View>
 
+            {/* Relationship Start Date */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Relationship Start Date</Text>
+              <TouchableOpacity
+                style={[
+                  styles.input,
+                  styles.datePickerButton,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  },
+                ]}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={[styles.datePickerText, { color: relationshipStartDate ? colors.text : colors.textSecondary }]}>
+                  {relationshipStartDate
+                    ? relationshipStartDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : 'Select date when relationship started'}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={relationshipStartDate || new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  maximumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(Platform.OS === 'ios')
+                    if (selectedDate) {
+                      setRelationshipStartDate(selectedDate)
+                    }
+                  }}
+                />
+              )}
+            </View>
+
             {/* Save Button */}
             <TouchableOpacity
               style={[styles.saveButton, { backgroundColor: colors.primary }]}
@@ -388,9 +465,10 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
                 Sign Out
               </Text>
             </TouchableOpacity>
-          </ScrollView>
-        </Motion.View>
-      </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -398,13 +476,19 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    width: '100%',
     maxHeight: '90%',
+    height: '85%', // Open modal to 85% of screen height
+    flexDirection: 'column',
     ...(Platform.OS === 'ios' && {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -2 },
@@ -438,6 +522,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 4,
+  },
+  scrollContainer: {
+    flex: 1,
+    minHeight: 0,
   },
   scrollView: {
     flex: 1,
@@ -496,6 +584,14 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     paddingTop: 14,
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  datePickerText: {
+    fontSize: 16,
   },
   errorText: {
     fontSize: 12,

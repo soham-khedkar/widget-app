@@ -41,11 +41,33 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TruLuvWidget",
+              "label": "TruLuv",
+              "minWidth": "200dp",
+              "minHeight": "200dp",
+              "description": "Access messages, todos, sneak peek, and days together"
+            }
+          ]
+        }
+      ],
+      "./plugins/fix-widget-xml.js"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ee4c48d6-9539-4a16-83b5-a34ce55b8411"
+      }
     }
   }
 }

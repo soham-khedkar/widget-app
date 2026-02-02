@@ -1,21 +1,21 @@
-import { useState } from 'react'
+import { Colors } from '@/constants/theme'
+import { useColorScheme } from '@/hooks/use-color-scheme'
+import { Todo, TodoGroup, useTodos } from '@/hooks/use-todos'
+import { Ionicons } from '@expo/vector-icons'
+import { useEffect, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Modal,
-  Platform,
+    Alert,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { GrainyBackground } from '@/components/grainy-background'
-import { useColorScheme } from '@/hooks/use-color-scheme'
-import { Colors } from '@/constants/theme'
-import { useTodos, TodoGroup, Todo } from '@/hooks/use-todos'
-import { Ionicons } from '@expo/vector-icons'
 
 export default function TodosScreen() {
   const colorScheme = useColorScheme()
@@ -44,6 +44,33 @@ export default function TodosScreen() {
   const [todoTitle, setTodoTitle] = useState('')
   const [todoDescription, setTodoDescription] = useState('')
   const [expandedTodos, setExpandedTodos] = useState<Set<string>>(new Set())
+
+  // Process pending widget actions when app opens
+  useEffect(() => {
+    const processPendingActions = async () => {
+      try {
+        const pendingActionsStr = await AsyncStorage.getItem('TruLuvWidgetPendingActions')
+        if (!pendingActionsStr) return
+
+        const pendingActions = JSON.parse(pendingActionsStr)
+        if (pendingActions.length === 0) return
+
+        // Process each pending action
+        for (const action of pendingActions) {
+          if (action.type === 'TOGGLE_TODO' && action.todoId) {
+            await toggleTodo(action.todoId)
+          }
+        }
+
+        // Clear processed actions
+        await AsyncStorage.removeItem('TruLuvWidgetPendingActions')
+      } catch (error) {
+        console.error('Error processing pending widget actions:', error)
+      }
+    }
+
+    processPendingActions()
+  }, [toggleTodo])
 
   const handleCreateGroup = async () => {
     if (!groupTitle.trim()) {
@@ -191,22 +218,29 @@ export default function TodosScreen() {
 
   const currentTodos = selectedGroup ? getTodosForGroup(selectedGroup) : []
 
+  // Fetch all todos when groups are loaded to get accurate counts
+  useEffect(() => {
+    if (groups.length > 0 && todos.length === 0 && !loading) {
+      // Fetch todos for all groups to show accurate counts
+      groups.forEach(group => {
+        fetchTodos(group.id)
+      })
+    }
+  }, [groups.length, loading])
+
   if (loading && groups.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <GrainyBackground>
-          <View style={styles.loadingContainer}>
-            <Text style={[styles.loadingText, { color: colors.text }]}>Loading todos...</Text>
-          </View>
-        </GrainyBackground>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading todos...</Text>
+        </View>
       </SafeAreaView>
     )
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <GrainyBackground>
-        <View style={styles.container}>
+      <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { color: colors.primary }]}>Todo Groups</Text>
@@ -259,7 +293,7 @@ export default function TodosScreen() {
                       <View style={styles.groupTitleContainer}>
                         <Text style={[styles.groupTitle, { color: colors.primary }]}>{group.title}</Text>
                         <Text style={[styles.groupCount, { color: colors.textSecondary }]}>
-                          {getTodosForGroup(group.id).length} todos
+                          {todos.filter(t => t.group_id === group.id).length} todos
                         </Text>
                       </View>
                       <Ionicons
@@ -345,6 +379,22 @@ export default function TodosScreen() {
                                 </TouchableOpacity>
                                 {todo.description && (
                                   <View style={styles.descriptionContainer}>
+                                    {expandedTodos.has(todo.id) && (
+                                      <View style={styles.todoActionsTop}>
+                                        <TouchableOpacity
+                                          style={styles.todoActionButton}
+                                          onPress={() => openEditTodo(todo)}
+                                        >
+                                          <Ionicons name="pencil" size={16} color={colors.primary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                          style={styles.todoActionButton}
+                                          onPress={() => handleDeleteTodo(todo)}
+                                        >
+                                          <Ionicons name="trash" size={16} color={colors.error} />
+                                        </TouchableOpacity>
+                                      </View>
+                                    )}
                                     <Text style={[styles.todoDescription, { color: colors.textSecondary }]}>
                                       {expandedTodos.has(todo.id) || todo.description.length <= MAX_DESCRIPTION_LENGTH
                                         ? todo.description
@@ -360,22 +410,40 @@ export default function TodosScreen() {
                                         </Text>
                                       </TouchableOpacity>
                                     )}
+                                    {!expandedTodos.has(todo.id) && (
+                                      <View style={styles.todoActions}>
+                                        <TouchableOpacity
+                                          style={styles.todoActionButton}
+                                          onPress={() => openEditTodo(todo)}
+                                        >
+                                          <Ionicons name="pencil" size={16} color={colors.primary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                          style={styles.todoActionButton}
+                                          onPress={() => handleDeleteTodo(todo)}
+                                        >
+                                          <Ionicons name="trash" size={16} color={colors.error} />
+                                        </TouchableOpacity>
+                                      </View>
+                                    )}
                                   </View>
                                 )}
-                              </View>
-                              <View style={styles.todoActions}>
-                                <TouchableOpacity
-                                  style={styles.todoActionButton}
-                                  onPress={() => openEditTodo(todo)}
-                                >
-                                  <Ionicons name="pencil" size={16} color={colors.primary} />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={styles.todoActionButton}
-                                  onPress={() => handleDeleteTodo(todo)}
-                                >
-                                  <Ionicons name="trash" size={16} color={colors.error} />
-                                </TouchableOpacity>
+                                {!todo.description && (
+                                  <View style={styles.todoActions}>
+                                    <TouchableOpacity
+                                      style={styles.todoActionButton}
+                                      onPress={() => openEditTodo(todo)}
+                                    >
+                                      <Ionicons name="pencil" size={16} color={colors.primary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      style={styles.todoActionButton}
+                                      onPress={() => handleDeleteTodo(todo)}
+                                    >
+                                      <Ionicons name="trash" size={16} color={colors.error} />
+                                    </TouchableOpacity>
+                                  </View>
+                                )}
                               </View>
                             </View>
                           ))
@@ -492,7 +560,6 @@ export default function TodosScreen() {
             </View>
           </View>
         </Modal>
-      </GrainyBackground>
     </SafeAreaView>
   )
 }
@@ -659,6 +726,13 @@ const styles = StyleSheet.create({
   todoActions: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 8,
+  },
+  todoActionsTop: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
   },
   todoActionButton: {
     padding: 4,
