@@ -17,6 +17,7 @@ import { Colors } from '@/constants/theme'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import type { PunchCard } from '@/types/database'
 import { Ionicons } from '@expo/vector-icons'
+import { Button } from 'heroui-native'
 
 interface PunchCardDisplayProps {
   punchCard: PunchCard | null
@@ -119,44 +120,36 @@ export function PunchCardDisplay({
       </View>
 
       {/* Punch Button */}
-      <TouchableOpacity
-        style={[
-          styles.punchButton,
-          {
-            backgroundColor: canPunchToday ? colors.primary : colors.surface,
-            borderColor: colors.primary,
-          },
-          !canPunchToday && styles.punchButtonDisabled,
-        ]}
+      <Button
+        className="w-full"
+        variant={canPunchToday ? 'primary' : 'outline'}
         onPress={handlePunch}
-        disabled={!canPunchToday || punching}
-        activeOpacity={0.8}
+        isDisabled={!canPunchToday || punching}
+        isPending={punching}
       >
-        {punching ? (
-          <ActivityIndicator color={canPunchToday ? colors.background : colors.primary} size="small" />
-        ) : showSuccess ? (
+        {({ isPending }) => (
           <>
-            <Ionicons name="checkmark-circle" size={20} color={colors.background} />
-            <Text style={[styles.punchButtonText, { color: colors.background }]}>Punched! 🎉</Text>
-          </>
-        ) : (
-          <>
-            <Ionicons
-              name={canPunchToday ? 'finger-print' : 'checkmark-done'}
-              size={20}
-              color={canPunchToday ? colors.background : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.punchButtonText,
-                { color: canPunchToday ? colors.background : colors.textSecondary },
-              ]}
-            >
-              {canPunchToday ? 'Punch In Today' : 'Already Punched'}
-            </Text>
+            {isPending ? (
+              <ActivityIndicator size="small" />
+            ) : showSuccess ? (
+              <>
+                <Ionicons name="checkmark-circle" size={20} />
+                <Text>Punched! 🎉</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons
+                  name={canPunchToday ? 'finger-print' : 'checkmark-done'}
+                  size={20}
+                />
+                <Text>
+                  {canPunchToday ? 'Punch In Today' : 'Already Punched'}
+                </Text>
+              </>
+            )}
           </>
         )}
-      </TouchableOpacity>
+      </Button>
     </View>
   )
 }

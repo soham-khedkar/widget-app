@@ -1,10 +1,10 @@
-import { ProfileModal } from '@/components/profile-modal'
 import {
     CreateStreakModal,
     PunchCardDisplay,
     SetupPunchCardModal,
     StreakCard,
 } from '@/components/punch-card'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 import { Colors } from '@/constants/theme'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { useColorScheme } from '@/hooks/use-color-scheme'
@@ -18,10 +18,11 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
+    TouchableOpacity,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Avatar, Button } from 'heroui-native'
 
 export default function HomeScreen() {
   const { profile, signOut } = useAuthContext()
@@ -29,7 +30,6 @@ export default function HomeScreen() {
   const colors = Colors[colorScheme ?? 'light']
   const router = useRouter()
 
-  const [profileModalVisible, setProfileModalVisible] = useState(false)
   const [setupPunchCardVisible, setSetupPunchCardVisible] = useState(false)
   const [createStreakVisible, setCreateStreakVisible] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -55,6 +55,18 @@ export default function HomeScreen() {
     await refresh()
     setRefreshing(false)
   }, [refresh])
+
+  const getInitials = () => {
+    if (profile?.name) {
+      return profile.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    }
+    return 'U'
+  }
 
   // Quick access cards data
   const quickActions = [
@@ -84,7 +96,7 @@ export default function HomeScreen() {
       label: 'Profile',
       icon: 'person',
       color: '#FFB86B',
-      onPress: () => setProfileModalVisible(true),
+      onPress: () => router.push('/(tabs)/profile'),
     },
   ]
 
@@ -100,24 +112,35 @@ export default function HomeScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-                {getGreeting()},
-              </Text>
-              <Text style={[styles.userName, { color: colors.text }]}>
-                {profile?.name || 'Love Bird'}
-              </Text>
+            <View style={styles.headerLeft}>
+              <Avatar size="md" className="mr-3">
+                {profile?.avatar_url ? (
+                  <Avatar.Image src={profile.avatar_url} alt={profile?.name || 'User'} />
+                ) : null}
+                <Avatar.Fallback>{getInitials()}</Avatar.Fallback>
+              </Avatar>
+              <View>
+                <Text style={[styles.greeting, { color: colors.textSecondary }]}>
+                  {getGreeting()},
+                </Text>
+                <Text style={[styles.userName, { color: colors.text }]}>
+                  {profile?.name || 'Love Bird'}
+                </Text>
+              </View>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={[styles.settingsButton, { borderColor: colors.border }]}
+              <ThemeSwitcher />
+              <Button
+                isIconOnly
+                variant="ghost"
+                size="sm"
                 onPress={async () => {
                   await signOut()
                   router.replace('/login')
                 }}
               >
-                <Ionicons name="log-out-outline" size={20} color={colors.primary} />
-              </TouchableOpacity>
+                <Ionicons name="log-out-outline" size={20} />
+              </Button>
             </View>
           </View>
 
@@ -138,10 +161,7 @@ export default function HomeScreen() {
               {quickActions.map((action) => (
                 <TouchableOpacity
                   key={action.id}
-                  style={[
-                    styles.quickActionCard,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
+                  style={[styles.quickActionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={action.onPress}
                   activeOpacity={0.7}
                 >
@@ -160,13 +180,14 @@ export default function HomeScreen() {
           <View style={styles.streaksSection}>
             <View style={styles.streaksHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Streaks 🔥</Text>
-              <TouchableOpacity
-                style={[styles.addStreakButton, { borderColor: colors.primary }]}
+              <Button
+                size="sm"
+                variant="outline"
                 onPress={() => setCreateStreakVisible(true)}
               >
-                <Ionicons name="add" size={18} color={colors.primary} />
-                <Text style={[styles.addStreakText, { color: colors.primary }]}>New</Text>
-              </TouchableOpacity>
+                <Ionicons name="add" size={18} />
+                <Text>New</Text>
+              </Button>
             </View>
 
             {streaksLoading ? (
@@ -228,11 +249,6 @@ export default function HomeScreen() {
           <View style={styles.bottomSpacer} />
         </ScrollView>
 
-        {/* Modals - Only render when visible for better performance */}
-        {profileModalVisible && (
-          <ProfileModal visible={profileModalVisible} onClose={() => setProfileModalVisible(false)} />
-        )}
-
         {setupPunchCardVisible && (
           <SetupPunchCardModal
             visible={setupPunchCardVisible}
@@ -276,9 +292,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   greeting: {
     fontSize: 14,
@@ -288,15 +310,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     marginTop: 2,
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
   },
   quickActionsContainer: {
     marginBottom: 24,
@@ -349,20 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  addStreakButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 2,
-  },
-  addStreakText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyStreaks: {
+          emptyStreaks: {
     alignItems: 'center',
     padding: 32,
     borderRadius: 20,
@@ -392,6 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   partnerBannerText: {
     flex: 1,

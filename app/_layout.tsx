@@ -1,17 +1,21 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { InteractionManager, Platform } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import * as Linking from 'expo-linking'
 import 'react-native-reanimated'
 import Toast from 'react-native-toast-message'
+import { HeroUINativeProvider } from 'heroui-native'
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 
 import { SplashScreenController } from '@/components/splash-screen-controller'
 
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import AuthProvider from '@/providers/auth-provider'
+import { AppThemeProvider } from '@/providers/theme-provider'
 
 // Separate RootNavigator so we can access the AuthContext
 function RootNavigator() {
@@ -166,13 +170,21 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <SplashScreenController />
-        <RootNavigator />
-        <StatusBar style="auto" />
-        <Toast visibilityTime={2000} />
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <HeroUINativeProvider>
+        <AppThemeProvider>
+          <BottomSheetModalProvider>
+            <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <AuthProvider>
+                <SplashScreenController />
+                <RootNavigator />
+                <StatusBar style="auto" />
+                <Toast visibilityTime={2000} />
+              </AuthProvider>
+            </NavigationThemeProvider>
+          </BottomSheetModalProvider>
+        </AppThemeProvider>
+      </HeroUINativeProvider>
+    </GestureHandlerRootView>
   )
 }

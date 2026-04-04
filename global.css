@@ -1,25 +1,158 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'uniwind';
 
-/* Grainy paper texture effect */
+@import 'heroui-native/styles';
+
+/* Path to the heroui-native lib inside node_modules relative to global.css */
+@source './node_modules/heroui-native/lib';
+
+/* Custom Theme for Couple/Relationship App - "TruLuv" Theme */
 @layer base {
-  html {
-    /* Subtle grainy texture - can be enhanced with actual texture image */
-    background-image: 
-      repeating-linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.01) 0px,
-        transparent 1px,
-        transparent 2px,
-        rgba(0, 0, 0, 0.01) 3px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        rgba(0, 0, 0, 0.01) 0px,
-        transparent 1px,
-        transparent 2px,
-        rgba(0, 0, 0, 0.01) 3px
-      );
+  /* Light Theme - Warm & Romantic */
+  :root,
+  [data-theme="light"] {
+    color-scheme: light;
+
+    /* Primitive Colors */
+    --white: oklch(100% 0 0);
+    --black: oklch(0% 0 0);
+    --snow: oklch(0.9911 0 0);
+    --eclipse: oklch(0.2103 0.0059 285.89);
+
+    /* Spacing & Layout */
+    --spacing: 0.25rem;
+    --border-width: 1px;
+    --field-border-width: 0px;
+    --disabled-opacity: 0.5;
+    --ring-offset-width: 2px;
+    --cursor-interactive: pointer;
+    --cursor-disabled: not-allowed;
+
+    /* Radius - Slightly rounded for modern feel */
+    --radius: 0.75rem;
+    --field-radius: calc(var(--radius) * 1.5);
+
+    /* Base Colors - Warm cream background (converted to rgb) */
+    --background: rgb(252, 251, 250);
+    --foreground: rgb(45, 45, 50);
+
+    /* Surface - Soft white with warm tint (converted to rgb) */
+    --surface: rgb(254, 254, 253);
+    --surface-foreground: var(--foreground);
+    --surface-secondary: rgb(248, 247, 246);
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary: rgb(242, 240, 238);
+    --surface-tertiary-foreground: var(--foreground);
+
+    /* Overlay - Pure white for modals */
+    --overlay: var(--white);
+    --overlay-foreground: var(--foreground);
+
+    /* Muted - Warm gray */
+    --muted: oklch(0.55 0.015 285);
+    --scrollbar: oklch(0.87 0.006 286);
+
+    /* Default - Warm light gray (converted to rgb) */
+    --default: rgb(240, 240, 240);
+    --default-foreground: var(--foreground);
+
+    /* Accent - Romantic rose/coral pink (converted from oklch(0.65 0.18 15) to rgb) */
+    --accent: rgb(255, 107, 107);
+    --accent-foreground: var(--snow);
+
+    /* Form Fields */
+    --field-background: var(--white);
+    --field-foreground: var(--foreground);
+    --field-placeholder: var(--muted);
+    --field-border: oklch(0.90 0.004 85);
+
+    /* Status Colors (converted to rgb) */
+    --success: rgb(76, 175, 80);
+    --success-foreground: var(--eclipse);
+    --warning: rgb(255, 193, 7);
+    --warning-foreground: var(--eclipse);
+    --danger: rgb(244, 67, 54);
+    --danger-foreground: var(--snow);
+
+    /* Component Colors */
+    --segment: var(--white);
+    --segment-foreground: var(--foreground);
+
+    /* Borders & Separators */
+    --border: oklch(0.88 0.005 85);
+    --separator: oklch(0.92 0.004 85);
+    --focus: var(--accent);
+    --link: var(--accent);
+
+    /* Shadows - Soft and warm */
+    --surface-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+    --overlay-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.12), 0 4px 12px 0 rgba(0, 0, 0, 0.08);
+    --field-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+
+    /* Skeleton Animation */
+    --skeleton-animation: shimmer;
+  }
+
+  /* Dark Theme - Deep romantic purple/pink */
+  .dark,
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    /* Base Colors - Deep purple background (converted to rgb) */
+    --background: rgb(30, 30, 40);
+    --foreground: var(--snow);
+
+    /* Surface - Dark purple-gray (converted to rgb) */
+    --surface: rgb(45, 45, 55);
+    --surface-foreground: var(--foreground);
+    --surface-secondary: rgb(55, 55, 65);
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary: rgb(65, 65, 75);
+    --surface-tertiary-foreground: var(--foreground);
+
+    /* Overlay - Slightly lighter for contrast */
+    --overlay: oklch(0.22 0.015 285);
+    --overlay-foreground: var(--foreground);
+
+    /* Muted - Light purple-gray */
+    --muted: oklch(0.70 0.015 286);
+    --scrollbar: oklch(0.70 0.015 286);
+
+    /* Default - Medium purple-gray (converted to rgb) */
+    --default: rgb(60, 60, 70);
+    --default-foreground: var(--snow);
+
+    /* Form Fields */
+    --field-background: var(--default);
+    --field-foreground: var(--foreground);
+    --field-placeholder: var(--muted);
+    --field-border: oklch(0.30 0.010 285);
+
+    /* Accent - Bright romantic pink (converted from oklch(0.75 0.20 15) to rgb) */
+    --accent: rgb(255, 150, 150);
+    --accent-foreground: var(--eclipse);
+
+    /* Status Colors (converted to rgb) */
+    --success: rgb(76, 175, 80);
+    --success-foreground: var(--eclipse);
+    --warning: rgb(255, 193, 7);
+    --warning-foreground: var(--eclipse);
+    --danger: rgb(244, 67, 54);
+    --danger-foreground: var(--snow);
+
+    /* Component Colors */
+    --segment: oklch(0.30 0.012 285);
+    --segment-foreground: var(--foreground);
+
+    /* Borders & Separators */
+    --border: oklch(0.28 0.008 285);
+    --separator: oklch(0.25 0.008 285);
+    --focus: var(--accent);
+    --link: var(--accent);
+
+    /* Shadows - Minimal in dark mode */
+    --surface-shadow: 0 0 0 0 transparent inset;
+    --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    --field-shadow: 0 0 0 0 transparent inset;
   }
 }

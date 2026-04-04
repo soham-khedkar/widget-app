@@ -3,9 +3,10 @@ import { useAuthContext } from '@/hooks/use-auth-context'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { Ionicons } from '@expo/vector-icons'
 import { Image } from 'expo-image'
-import { useState } from 'react'
+import { useLocalSearchParams } from 'expo-router'
+import { Button } from 'heroui-native'
+import { useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
@@ -26,10 +27,18 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({})
+  const params = useLocalSearchParams()
   
   const { signIn, signUp, signInWithGoogle } = useAuthContext()
   const colorScheme = useColorScheme()
   const colors = Colors[colorScheme ?? 'light']
+
+  // Show error from OAuth callback if present
+  useEffect(() => {
+    if (params.error) {
+      Alert.alert('Authentication Error', decodeURIComponent(params.error as string))
+    }
+  }, [params.error])
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -154,19 +163,31 @@ export default function LoginScreen() {
   }
 
   const handleGoogleAuth = async () => {
+    if (loading) return // Prevent multiple clicks
+    
     setLoading(true)
     try {
       const result = await signInWithGoogle()
+      
       if (result.error) {
         setLoading(false)
-        Alert.alert('Google Sign In Failed', result.error.message || 'Please try again')
+        const errorMessage = result.error.message || 'Please try again'
+        
+        // Don't show alert for user cancellation
+        if (!errorMessage.toLowerCase().includes('cancelled')) {
+          Alert.alert('Google Sign In Failed', errorMessage)
+        }
       } else {
         // OAuth flow completed - session is set, auth state will update
-        setLoading(false)
+        // Navigation happens automatically via auth state change in _layout.tsx
+        // Keep loading state until navigation completes
       }
     } catch (error: any) {
       setLoading(false)
-      Alert.alert('Error', error.message || 'Something went wrong')
+      const errorMessage = error.message || 'Something went wrong'
+      if (!errorMessage.toLowerCase().includes('cancelled')) {
+        Alert.alert('Error', errorMessage)
+      }
     }
   }
 
@@ -322,19 +343,16 @@ export default function LoginScreen() {
             </View>
 
             {/* Primary Button */}
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+            <Button
+              className="w-full mt-2 mb-6"
               onPress={handleEmailAuth}
-              disabled={loading}
+              isDisabled={loading}
+              size="lg"
             >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>
-                  {isSignUp ? 'Sign Up' : 'Sign In'}
-                </Text>
-              )}
-            </TouchableOpacity>
+              <Text>
+                {loading ? (isSignUp ? 'Creating Account...' : 'Signing In...') : (isSignUp ? 'Sign Up' : 'Sign In')}
+              </Text>
+            </Button>
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
@@ -344,23 +362,27 @@ export default function LoginScreen() {
             </View>
 
             {/* Google Button */}
-            <TouchableOpacity
-              style={[styles.googleButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            <Button
+              className="w-full mb-6"
+              variant="secondary"
               onPress={handleGoogleAuth}
-              disabled={loading}
+              isDisabled={loading}
+              size="lg"
             >
-              <Ionicons name="logo-google" size={20} color={colors.text} />
-              <Text style={[styles.googleButtonText, { color: colors.text }]}>
-                Continue with Google
-              </Text>
-            </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="logo-google" size={20} style={{ marginRight: 8 }} />
+                <Text>Continue with Google</Text>
+              </View>
+            </Button>
 
             {/* Toggle Sign Up/Sign In */}
             <View style={styles.toggleContainer}>
               <Text style={[styles.toggleText, { color: colors.textSecondary }]}>
                 {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
               </Text>
-              <TouchableOpacity
+              <Button
+                variant="ghost"
+                size="sm"
                 onPress={() => {
                   setIsSignUp(!isSignUp)
                   setErrors({}) // Clear errors when switching
@@ -369,10 +391,8 @@ export default function LoginScreen() {
                   setName('')
                 }}
               >
-                <Text style={[styles.toggleLink, { color: colors.primary }]}>
-                  {isSignUp ? 'Sign In' : 'Sign Up'}
-                </Text>
-              </TouchableOpacity>
+                <Text>{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
+              </Button>
             </View>
           </View>
         </View>

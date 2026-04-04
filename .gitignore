@@ -26,6 +26,9 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# Bun
+bun.lockb
+
 # macOS
 .DS_Store
 *.pem
@@ -43,7 +46,12 @@ app-example
 /ios
 /android
 
-# documentation and migrations (excluded from commits)
-*.md
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Migrations
 *.sql
+
+# Cursor agent
 .agent/

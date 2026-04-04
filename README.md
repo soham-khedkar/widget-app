@@ -23,8 +23,13 @@ TruLuv is a lightweight emotional and organizational space for couples to:
 ## 📦 Setup Instructions
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
+- **Bun** (v1.0.0 or higher) — the project uses Bun as the package manager; all commands use `bun`.
+  - **Install on Linux (e.g. Fedora):**
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    ```
+    Then restart your terminal or run `source ~/.bashrc` (or `source ~/.zshrc`). Verify with `bun --version`.
+  - [Full install options](https://bun.sh/docs/installation)
 - Expo Go app on your phone (for testing)
 
 ### Installation
@@ -35,12 +40,19 @@ TruLuv is a lightweight emotional and organizational space for couples to:
    cd truluv
    ```
 
-2. **Install dependencies**
+2. **Install Bun** (if not already installed — see Prerequisites).
+
+3. **Install dependencies**
    ```bash
-   npm install
+   bun install
+   ```
+   If you see a `lightningcss` or "Cannot find module ... .node" error (e.g. after switching from npm or another OS), do a clean install so the correct native binaries for your platform are installed:
+   ```bash
+   rm -rf node_modules
+   bun install
    ```
 
-3. **Set up environment variables**
+4. **Set up environment variables**
    
    Create a `.env` file in the root directory:
    ```bash
@@ -55,12 +67,14 @@ TruLuv is a lightweight emotional and organizational space for couples to:
    
    Get these from your Supabase project: **Project Settings → API**
 
-4. **Start the development server**
+5. **Start the development server**
    ```bash
-   npm start
+   bun start
+   # or
+   bun run start
    ```
 
-5. **Run on your device**
+6. **Run on your device**
    - Scan the QR code with Expo Go (Android) or Camera app (iOS)
    - Or press `a` for Android emulator, `i` for iOS simulator
 
@@ -101,9 +115,9 @@ truluv/
 
 ## 📝 Development
 
-- Run linter: `npm run lint`
-- Type check: `npx tsc --noEmit`
-- Reset project: `npm run reset-project`
+- Run linter: `bun run lint`
+- Type check: `bunx tsc --noEmit`
+- Reset project: `bun run reset-project`
 
 ## 🤝 Contributing
 

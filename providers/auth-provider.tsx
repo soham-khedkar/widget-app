@@ -1,5 +1,5 @@
 import { AuthContext } from '@/hooks/use-auth-context'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import * as WebBrowser from 'expo-web-browser'
 import { PropsWithChildren, useEffect, useState } from 'react'
@@ -201,10 +201,11 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       if (data?.user && !data.session) {
         // Profile will be created by trigger when user confirms email
         // But let's also try to create it now in case email confirmation is disabled
-        if (data.user.id) {
+        const userId = data.user?.id
+        if (userId) {
           // Try to fetch profile after a short delay to allow trigger to run
           setTimeout(async () => {
-            await fetchProfile(data.user.id)
+            await fetchProfile(userId)
           }, 1000)
         }
       } else if (data?.session) {
@@ -263,6 +264,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          skipBrowserRedirect: false, // Let Supabase handle browser redirect
         },
       })
 
@@ -272,6 +274,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       }
 
       if (data?.url) {
+        // Open browser for OAuth flow
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
           redirectUrl
@@ -282,32 +285,62 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         }
 
         if (result.type === 'success' && result.url) {
-          // Extract tokens from the callback URL
-          const hashMatch = result.url.match(/#(.+)/)
-          if (hashMatch) {
-            const hashParams = new URLSearchParams(hashMatch[1])
-            const access_token = hashParams.get('access_token')
-            const refresh_token = hashParams.get('refresh_token')
+          // Parse the callback URL
+          // Format: truluv://auth/callback#access_token=...&refresh_token=...
+          const urlObj = new URL(result.url.replace('truluv://', 'https://'))
+          const hashParams = new URLSearchParams(urlObj.hash.substring(1))
+          
+          // Also check query params (some OAuth flows use query params)
+          const queryParams = new URLSearchParams(urlObj.search)
+          
+          const access_token = hashParams.get('access_token') || queryParams.get('access_token')
+          const refresh_token = hashParams.get('refresh_token') || queryParams.get('refresh_token')
+          const error_param = hashParams.get('error') || queryParams.get('error')
+          const error_description = hashParams.get('error_description') || queryParams.get('error_description')
 
-            if (access_token && refresh_token) {
-              const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-                access_token,
-                refresh_token,
-              })
+          if (error_param) {
+            return { 
+              data: null, 
+              error: { 
+                message: error_description || error_param || 'OAuth error occurred' 
+              } 
+            }
+          }
 
-              if (sessionError) {
-                return { data: null, error: sessionError }
-              }
+          if (access_token && refresh_token) {
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            })
 
-              // Manually update session state (auth state listener should also fire, but ensure it updates)
-              if (sessionData.session) {
-                setSession(sessionData.session)
-                
-                // Fetch profile after a brief delay to allow trigger to run
-                setTimeout(async () => {
-                  await fetchProfile(sessionData.session.user.id)
-                }, 500)
-              }
+            if (sessionError) {
+              return { data: null, error: sessionError }
+            }
+
+            // Manually update session state
+            if (sessionData.session?.user?.id) {
+              const session = sessionData.session
+              setSession(session)
+              
+              // Fetch profile after a brief delay to allow trigger to run
+              setTimeout(async () => {
+                await fetchProfile(session.user.id)
+              }, 500)
+              
+              return { data: sessionData, error: null }
+            }
+          } else {
+            // If no tokens in URL, try to get session (might have been set by Supabase)
+            const { data: sessionData } = await supabase.auth.getSession()
+            if (sessionData.session) {
+              setSession(sessionData.session)
+              await fetchProfile(sessionData.session.user.id)
+              return { data: sessionData, error: null }
+            }
+            
+            return { 
+              data: null, 
+              error: { message: 'Failed to retrieve authentication tokens' } 
             }
           }
         }

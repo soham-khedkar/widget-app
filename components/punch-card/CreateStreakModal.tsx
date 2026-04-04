@@ -1,25 +1,25 @@
 /**
  * Create Streak Modal
- * Modal for creating new streaks with AI-generated backgrounds
+ * Bottom sheet for creating new streaks with AI-generated backgrounds
  */
 
 import { Colors } from '@/constants/theme'
 import { useAI } from '@/hooks/use-ai'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { Ionicons } from '@expo/vector-icons'
-import { useState } from 'react'
+import BottomSheet, { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
-    Modal,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native'
+import { Button } from 'heroui-native'
 
 interface CreateStreakModalProps {
   visible: boolean
@@ -50,6 +50,10 @@ export function CreateStreakModal({ visible, onClose, onCreate }: CreateStreakMo
   const [creating, setCreating] = useState(false)
   const [aiIdeas, setAiIdeas] = useState<string[]>([])
   const [showAiIdeas, setShowAiIdeas] = useState(false)
+
+  // Bottom sheet snap points - 75% of screen height, respects punch hole
+  const snapPoints = useMemo(() => ['75%'], [])
+  const bottomSheetRef = useRef<BottomSheet>(null)
 
   const handleCreate = async () => {
     if (!topic.trim() || creating) return
@@ -90,44 +94,53 @@ export function CreateStreakModal({ visible, onClose, onCreate }: CreateStreakMo
     onClose()
   }
 
+  const handleSheetChange = useCallback((index: number) => {
+    if (index === -1) {
+      handleClose()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (visible) {
+      bottomSheetRef.current?.expand()
+    } else {
+      bottomSheetRef.current?.close()
+    }
+  }, [visible])
+
+  if (!visible) return null
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+    <BottomSheet
+      ref={bottomSheetRef}
+      index={0}
+      snapPoints={snapPoints}
+      enablePanDownToClose
+      onClose={handleClose}
+      onChange={handleSheetChange}
+      backgroundStyle={{ backgroundColor: colors.background }}
+      handleIndicatorStyle={{ backgroundColor: colors.border }}
     >
-      <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <BottomSheetView style={styles.container}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text }]}>New Streak</Text>
-          <TouchableOpacity
-            onPress={handleCreate}
-            disabled={!topic.trim() || creating}
-            style={[styles.createButton, !topic.trim() && styles.createButtonDisabled]}
-          >
-            {creating ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.createButtonText,
-                  { color: topic.trim() ? colors.primary : colors.textSecondary },
-                ]}
-              >
-                Create
-              </Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.createButtonContainer}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={handleCreate}
+              isDisabled={!topic.trim() || creating}
+            >
+              <Text>{creating ? 'Creating...' : 'Create'}</Text>
+            </Button>
+          </View>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <BottomSheetScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Topic Input */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>What&apos;s your streak?</Text>
@@ -268,9 +281,9 @@ export function CreateStreakModal({ visible, onClose, onCreate }: CreateStreakMo
               AI will generate a beautiful gradient background based on your streak topic! ✨
             </Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
+        </BottomSheetScrollView>
+      </BottomSheetView>
+    </BottomSheet>
   )
 }
 
@@ -293,16 +306,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  createButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  createButtonDisabled: {
-    opacity: 0.5,
-  },
-  createButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  createButtonContainer: {
+    minWidth: 80,
   },
   content: {
     flex: 1,
